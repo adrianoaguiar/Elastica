@@ -6,8 +6,7 @@
  * @package Elastica
  * @author Nicolas Ruflin <spam@ruflin.com>
  */
-class Elastica_Client
-{
+class Elastica_Client {
 	/**
 	 * Default elastic search port
 	 */
@@ -42,6 +41,7 @@ class Elastica_Client
 		'path' => '',
 		'url' => null,
 		'transport' => self::DEFAULT_TRANSPORT,
+		'persistent' => true,
 		'timeout' => self::TIMEOUT,
 		'headers' => array(),
 		'servers' => array(),
@@ -339,10 +339,11 @@ class Elastica_Client
 	 * @param string $path Path to call
 	 * @param string $method Rest method to use (GET, POST, DELETE, PUT)
 	 * @param array $data OPTIONAL Arguments as array
+	 * @param array $query OPTIONAL Query params
 	 * @return Elastica_Response Response object
 	 */
-	public function request($path, $method, $data = array()) {
-		$request = new Elastica_Request($this, $path, $method, $data);
+	public function request($path, $method, $data = array(), array $query = array()) {
+		$request = new Elastica_Request($this, $path, $method, $data, $query);
 		return $request->send();
 	}
 

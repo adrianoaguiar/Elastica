@@ -9,11 +9,15 @@
 class Elastica_Transport_Http extends Elastica_Transport_Abstract {
 
 	/**
+	 * Http scheme
+	 * 
 	 * @var string Http scheme
 	 */
 	protected $_scheme = 'http';
 
 	/**
+	 * Curl resource to reuse
+	 * 
 	 * @var resource Curl resource to reuse
 	 */
 	protected static $_connection = null;
@@ -23,14 +27,14 @@ class Elastica_Transport_Http extends Elastica_Transport_Abstract {
 	 *
 	 * All calls that are made to the server are done through this function
 	 *
-	 * @param string $host Host name
-	 * @param int $port Port number
+	 * @param array $params Host, Port, ...
 	 * @return Elastica_Response Response object
 	 */
 	public function exec(array $params) {
-		$conn = $this->_getConnection();
 
 		$request = $this->getRequest();
+
+		$conn = $this->_getConnection($request->getConfig('persistent'));
 
 		// If url is set, url is taken. Otherwise port, host and path
 		if (!empty($params['url'])) {
@@ -46,6 +50,12 @@ class Elastica_Transport_Http extends Elastica_Transport_Abstract {
 		}
 
 		$baseUri .= $request->getPath();
+
+		$query = $request->getQuery();
+
+		if (!empty($query)) {
+			$baseUri .= '?' . http_build_query($query);
+		}
 
 		curl_setopt($conn, CURLOPT_URL, $baseUri);
 		curl_setopt($conn, CURLOPT_TIMEOUT, $request->getConfig('timeout'));
@@ -67,7 +77,7 @@ class Elastica_Transport_Http extends Elastica_Transport_Abstract {
 		// TODO: REFACTOR
 		$data = $request->getData();
 
-		if (isset($data)) {
+		if (isset($data) && !empty($data)) {
 			if (is_array($data)) {
 				$content = json_encode($data);
 			} else {
@@ -122,10 +132,13 @@ class Elastica_Transport_Http extends Elastica_Transport_Abstract {
 	}
 
 	/**
+	 * Return Curl ressource
+	 * 
+	 * @param bool $persistent False if not persistent connection
 	 * @return resource Connection resource
 	 */
-	protected function _getConnection() {
-		if (!self::$_connection){
+	protected function _getConnection($persistent = true) {
+		if (!$persistent || !self::$_connection){
 			self::$_connection = curl_init();
 		}
 		return self::$_connection;

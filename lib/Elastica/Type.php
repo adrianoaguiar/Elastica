@@ -14,11 +14,15 @@
  */
 class Elastica_Type implements Elastica_Searchable {
 	/**
+	 * Index
+	 * 
 	 * @var Elastica_Index Index object
 	 */
 	protected $_index = null;
 
 	/**
+	 * Type name
+	 * 
 	 * @var string Type name
 	 */
 	protected $_name = '';
@@ -62,10 +66,6 @@ class Elastica_Type implements Elastica_Searchable {
 			$query['percolate'] = $doc->getPercolate();
 		}
 
-		if (count($query) > 0) {
-			$path .= '?' . http_build_query($query);
-		}
-
 		$type = Elastica_Request::PUT;
 
 		// If id is empty, POST has to be used to automatically create id
@@ -73,13 +73,13 @@ class Elastica_Type implements Elastica_Searchable {
 			$type = Elastica_Request::POST;
 		}
 
-		return $this->request($path, $type, $doc->getData());
+		return $this->request($path, $type, $doc->getData(), $query);
 	}
 
 	/**
 	 * Uses _bulk to send documents to the server
 	 *
-	 * @param Elastica_Document[] $docs Array of Elastica_Document
+	 * @param array $docs Array of Elastica_Document
 	 * @link http://www.elasticsearch.com/docs/elasticsearch/rest_api/bulk/
 	 */
 	public function addDocuments(array $docs) {
@@ -127,6 +127,8 @@ class Elastica_Type implements Elastica_Searchable {
 	}
 
 	/**
+	 * Returns the type name
+	 * 
 	 * @return string Type name
 	 */
 	public function getName() {
@@ -137,7 +139,6 @@ class Elastica_Type implements Elastica_Searchable {
 	 * Sets value type mapping for this type
 	 *
 	 * @param Elastica_Type_Mapping|array $mapping Elastica_Type_Mapping object or property array with all mappings
-	 * @param bool                        $source  OPTIONAL If source should be stored or not (default = true)
 	 */
 	public function setMapping($mapping) {
 
@@ -159,6 +160,8 @@ class Elastica_Type implements Elastica_Searchable {
 	}
 
     /**
+     * Do a search on this type
+     * 
      * @param string|array|Elastica_Query $query Array with all query data inside or a Elastica_Query object
      * @param int                         $limit OPTIONAL
      * @return Elastica_ResultSet ResultSet with all results inside
@@ -176,6 +179,8 @@ class Elastica_Type implements Elastica_Searchable {
     }
 
 	/**
+	 * Count docs by query
+	 * 
 	 * @param string|array|Elastica_Query $query Array with all query data inside or a Elastica_Query object
 	 * @return int number of documents matching the query
 	 * @see Elastica_Searchable::count
@@ -248,14 +253,20 @@ class Elastica_Type implements Elastica_Searchable {
 	 *
 	 * The id in the given object has to be set
 	 *
-	 * @param EalsticSearch_Document $doc  Document to query for similar objects
-	 * @param array                  $args OPTIONAL Additional arguments for the query
-	 * @link http://www.elasticsearch.com/docs/elasticsearch/rest_api/more_like_this/
+	 * @param Elastica_Document      $doc  Document to query for similar objects
+	 * @param array                  $params OPTIONAL Additional arguments for the query
+	 * @param Elastica_Query         $query OPTIONAL Query to filter the moreLikeThis results
+	 * @return Elastica_ResultSet    ResultSet with all results inside
+	 * @link http://www.elasticsearch.org/guide/reference/api/more-like-this.html
 	 */
-	public function moreLikeThis(Elastica_Document $doc, $args = array()) {
-		// TODO: Not tested yet
+	public function moreLikeThis(Elastica_Document $doc, $params = array(), $query = array()) {
 		$path = $doc->getId() . '/_mlt';
-		return $this->request($path, Elastica_Request::GET, $args);
+
+		$query = Elastica_Query::create($query);
+
+		$response = $this->request($path, Elastica_Request::GET, $query->toArray(), $params);
+
+		return new Elastica_ResultSet($response);
 	}
 
 	/**
@@ -264,10 +275,11 @@ class Elastica_Type implements Elastica_Searchable {
 	 * @param string $path   Path to call
 	 * @param string $method Rest method to use (GET, POST, DELETE, PUT)
 	 * @param array  $data   OPTIONAL Arguments as array
+	 * @param array $query OPTIONAL Query params
 	 * @return Elastica_Response Response object
 	 */
-	public function request($path, $method, $data = array()) {
+	public function request($path, $method, $data = array(), array $query = array()) {
 		$path = $this->getName() . '/' . $path;
-		return $this->getIndex()->request($path, $method, $data);
+		return $this->getIndex()->request($path, $method, $data, $query);
 	}
 }

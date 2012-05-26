@@ -16,6 +16,8 @@ class Elastica_Log
 	protected $_log = false;
 	
 	/**
+	 * Last logged message
+	 * 
 	 * @var string Last logged message
 	 */
 	protected $_lastMessage = '';
@@ -30,6 +32,8 @@ class Elastica_Log
 	}
 	
 	/**
+	 * Log a message
+	 * 
 	 * @param string|Elastica_Request $message
 	 */
 	public function log($message) {
@@ -52,6 +56,8 @@ class Elastica_Log
 	}
 	
 	/**
+	 * Enable/disable log or set log path
+	 * 
 	 * @param bool|string $log Enables log or sets log path
 	 * @return Elastica_Log
 	 */
@@ -68,13 +74,27 @@ class Elastica_Log
 	 */
 	protected function _convertRequest(Elastica_Request $request) {
 		$message = 'curl -X' . strtoupper($request->getMethod()) . ' ';
-		$message .= 'http://' . $request->getClient()->getHost() . ':' . $request->getClient()->getPort() . '/';
+		$message .= '\'http://' . $request->getClient()->getHost() . ':' . $request->getClient()->getPort() . '/';
 		$message .= $request->getPath();
-		$message .= ' -d \'' . json_encode($request->getData()) . '\'';
+
+		$query = $request->getQuery();
+		if (!empty($query)) {
+			$message .= '?' . http_build_query($query);
+		}
+
+		$message .= '\'';
+
+		$data = $request->getData();
+		if (!empty($data)) {
+			$message .= ' -d \'' . json_encode($data) . '\'';
+		}
+		
 		return $message;
 	}
 	
 	/**
+	 * Return last logged message
+	 * 
 	 * @return string Last logged message
 	 */
 	public function getLastMessage() {
